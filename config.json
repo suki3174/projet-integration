@@ -16,7 +16,11 @@
 	"session_expire_time": 2592000,
 	"session_refresh_time": 18000,
 	"localOnly": false,
-	"enableLocalMode": true,
+
+	"enableLocalMode": false,
+	"enableLocalAuth": true,
+	"enableSignUp": true,
+
 	"localModeSocketLocation": "/var/tmp/focalboard_local.socket",
 	"authMode": "native",
 	"logging_cfg_file": "",

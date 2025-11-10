@@ -7,5 +7,9 @@
 	"webpath": "./pack",
 	"filespath": "./files",
 	"telemetry": true,
-	"localOnly": true
+	"localOnly": true,
+
+	"enableLocalMode": false,
+	"enableLocalAuth": true,
+	"enableSignUp": true
 }

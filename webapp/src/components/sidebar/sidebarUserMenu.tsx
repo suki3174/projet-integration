@@ -52,6 +52,17 @@ const SidebarUserMenu = () => {
                     <Menu>
                         {user && user.username !== 'single-user' && <>
                             <Menu.Label><b>{user.username}</b></Menu.Label>
+                            
+                            
+                            <Menu.Text
+                                id='profile'
+                                name={intl.formatMessage({ id: 'Sidebar.profile', defaultMessage: 'Profile' })}
+                                onClick={() => {
+                                    history.push('/profile')
+                                }}
+                            />
+
+
                             <Menu.Text
                                 id='logout'
                                 name={intl.formatMessage({id: 'Sidebar.logout', defaultMessage: 'Log out'})}

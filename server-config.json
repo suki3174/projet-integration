@@ -1,3 +1,4 @@
+
 {
     "serverRoot": "http://localhost:8000",
     "port": 8000,
@@ -12,6 +13,11 @@
     "session_expire_time": 2592000,
     "session_refresh_time": 18000,
     "localOnly": false,
+"enablePublicSharedBoards": true,
+  "enableLocalMode": false,
+	"enableLocalAuth" : true,
+
+  "enableSignup": true,   
     "enableLocalMode": true,
     "localModeSocketLocation": "/var/tmp/focalboard_local.socket"
 }

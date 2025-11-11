@@ -1,18 +1,23 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {IntlShape} from 'react-intl'
+import { IntlShape } from 'react-intl'
 
-import {BoardView} from './blocks/boardView'
-import {Board, IPropertyTemplate} from './blocks/board'
-import {Card} from './blocks/card'
-import {Utils} from './utils'
-import {IAppWindow} from './types'
+import { BoardView } from './blocks/boardView'
+import { Board, IPropertyTemplate } from './blocks/board'
+import { Card } from './blocks/card'
+import {createCard} from './blocks/card'; // ajoute tout en haut du fichier
+
+import { Utils } from './utils'
+import { IAppWindow } from './types'
 import propsRegistry from './properties'
+import mutator from './mutator'
 
 declare let window: IAppWindow
 const hashSignToken = '___hash_sign___'
 
 class CsvExporter {
+
+    // Export the current view as a CSV file
     static exportTableCsv(board: Board, activeView: BoardView, cards: Card[], intl: IntlShape, view?: BoardView): void {
         const viewToExport = view ?? activeView
 
@@ -48,6 +53,85 @@ class CsvExporter {
         // TODO: Remove or reuse link
     }
 
+    //Import a CSV file into the current board as cards
+
+
+    static importTableCsv(board: Board, intl: IntlShape): void {
+    try {
+        const input: HTMLInputElement = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv';
+
+        input.onchange = async (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            const file = target.files?.[0];
+            if (!file) {
+                return;
+            }
+
+            const text: string = await file.text();
+            const lines: string[] = text.split(/\r?\n/).filter((line: string) => line.trim() !== '');
+
+            if (lines.length === 0) {
+                console.warn('CSV file is empty');
+                return;
+            }
+
+            const headers: string[] = lines[0]
+                .split(',')
+                .map((h: string) => h.replace(/"/g, '').trim());
+
+            const data: Record<string, string>[] = lines.slice(1).map((line: string) => {
+                const values: string[] = line.split(',').map((v: string) => v.replace(/"/g, '').trim());
+                const entry: Record<string, string> = {};
+                headers.forEach((header: string, index: number) => {
+                    entry[header] = values[index] || '';
+                });
+                return entry;
+            });
+
+            await mutator.performAsUndoGroup(async () => {
+                for (const row of data) {
+                    const newCard = createCard();
+                    newCard.boardId = board.id;
+                    newCard.parentId = board.id;
+                    newCard.title = row['Name'] || 'Untitled';
+
+                    // Parcours des propriétés visibles du board
+                    board.cardProperties.forEach((prop) => {
+                        const csvValue = row[prop.name];  // Cherche la valeur dans le CSV
+                        if (csvValue) {
+                            newCard.fields.properties[prop.id] = csvValue;  // Assigne à la carte
+                        }
+                    });
+
+                    await mutator.insertBlock(board.id, newCard);
+                }
+            });
+
+            const importCompleteMessage = intl.formatMessage({
+                id: 'ViewHeader.import-complete',
+                defaultMessage: 'Import complete!',
+            });
+            alert(importCompleteMessage);
+        };
+
+        input.click();
+    } catch (e) {
+        Utils.logError(`ImportCSV ERROR: ${e}`);
+        const importFailedMessage = intl.formatMessage({
+            id: 'ViewHeader.import-failed',
+            defaultMessage: 'Import failed!',
+        });
+        alert(importFailedMessage);
+    }
+}
+
+
+
+
+
+
     private static encodeText(text: string): string {
         return text.replace(/"/g, '""').replace(/#/g, hashSignToken)
     }
@@ -67,7 +151,7 @@ class CsvExporter {
 
         {
             // Header row
-            const row: string[] = [intl.formatMessage({id: 'TableComponent.name', defaultMessage: 'Name'})]
+            const row: string[] = [intl.formatMessage({ id: 'TableComponent.name', defaultMessage: 'Name' })]
             visibleProperties.forEach((template: IPropertyTemplate) => {
                 row.push(template.name)
             })
@@ -95,4 +179,4 @@ class CsvExporter {
     }
 }
 
-export {CsvExporter}
+export { CsvExporter }

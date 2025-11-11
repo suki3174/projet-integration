@@ -1,0 +1,53 @@
+/* Ajoutez ceci à votre ProfilePage.css ou ProfileDetails.css */
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Style pour le bouton Menu.Text */
+.menu-text-button {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #6c757d;
+  background: transparent;
+  color: #6c757d;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.menu-text-button:hover {
+  background: #6c757d;
+  color: white;
+  text-decoration: none;
+}
+
+/* Si Menu.Text génère un élément <a> */
+.menu-text-button[href] {
+  text-decoration: none;
+}
+
+.menu-text-button[href]:hover {
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}

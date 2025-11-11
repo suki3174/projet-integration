@@ -76,6 +76,7 @@ type Props = {
 //     })
 // }
 
+{/* Export CSV handler*/}
 function onExportCsvTrigger(board: Board, activeView: BoardView, cards: Card[], intl: IntlShape) {
     try {
         CsvExporter.exportTableCsv(board, activeView, cards, intl)
@@ -94,6 +95,21 @@ function onExportCsvTrigger(board: Board, activeView: BoardView, cards: Card[], 
     }
 }
 
+{/* Import csv handler*/}
+function onImportCsvTrigger(board: Board, intl: IntlShape) {
+    try {
+        CsvExporter.importTableCsv(board, intl)
+    } catch (e) {
+        Utils.logError(`ImportCSV ERROR: ${e}`)
+        const importFailedMessage = intl.formatMessage({
+            id: 'ViewHeader.import-failed',
+            defaultMessage: 'Import failed!',
+        })
+        sendFlashMessage({content: importFailedMessage, severity: 'high'})
+    }
+}
+
+
 const ViewHeaderActionsMenu = (props: Props) => {
     const {board, activeView, cards} = props
     const intl = useIntl()
@@ -103,11 +119,20 @@ const ViewHeaderActionsMenu = (props: Props) => {
             <MenuWrapper label={intl.formatMessage({id: 'ViewHeader.view-header-menu', defaultMessage: 'View header menu'})}>
                 <IconButton icon={<OptionsIcon/>}/>
                 <Menu position='left'>
+                    {/* exporter csv */}
                     <Menu.Text
                         id='exportCsv'
                         name={intl.formatMessage({id: 'ViewHeader.export-csv', defaultMessage: 'Export to CSV'})}
                         onClick={() => onExportCsvTrigger(board, activeView, cards, intl)}
                     />
+                    {/* importer csv */}
+                    <Menu.Text
+                        id='importCsv'
+                        name={intl.formatMessage({id: 'ViewHeader.import-csv', defaultMessage: 'Import from CSV'})}
+                        onClick={() => onImportCsvTrigger(board, intl)}
+                    />
+
+                    
                     <Menu.Text
                         id='exportBoardArchive'
                         name={intl.formatMessage({id: 'ViewHeader.export-board-archive', defaultMessage: 'Export board archive'})}

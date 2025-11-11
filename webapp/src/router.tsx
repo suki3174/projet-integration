@@ -13,6 +13,7 @@ import {createBrowserHistory, History} from 'history'
 
 import BoardPage from './pages/boardPage/boardPage'
 import ChangePasswordPage from './pages/changePasswordPage'
+
 import ErrorPage from './pages/errorPage'
 import LoginPage from './pages/loginPage'
 import RegisterPage from './pages/registerPage'
@@ -21,6 +22,7 @@ import octoClient from './octoClient'
 import {setGlobalError, getGlobalError} from './store/globalError'
 import {useAppSelector, useAppDispatch} from './store/hooks'
 import FBRoute from './route'
+import ProfilePage from './pages/profile/profile'
 
 const UUID_REGEX = new RegExp(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
 
@@ -87,11 +89,17 @@ const FocalboardRouter = (props: Props): JSX.Element => {
                 <FBRoute path='/login'>
                     <LoginPage/>
                 </FBRoute>
+
                 <FBRoute path='/register'>
                     <RegisterPage/>
                 </FBRoute>
                 <FBRoute path='/change_password'>
                     <ChangePasswordPage/>
+                </FBRoute>
+                
+                {/* Nouvelle route profil */}
+                <FBRoute path='/profile' loginRequired={true}>
+                    <ProfilePage/>
                 </FBRoute>
 
                 <FBRoute path={['/team/:teamId/new/:channelId']}>

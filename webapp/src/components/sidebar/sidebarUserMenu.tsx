@@ -53,7 +53,7 @@ const SidebarUserMenu = () => {
                         {user && user.username !== 'single-user' && <>
                             <Menu.Label><b>{user.username}</b></Menu.Label>
                             
-                            
+                            {/* profile section aymen */}
                             <Menu.Text
                                 id='profile'
                                 name={intl.formatMessage({ id: 'Sidebar.profile', defaultMessage: 'Profile' })}

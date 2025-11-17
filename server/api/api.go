@@ -62,6 +62,8 @@ func NewAPI(
 }
 
 func (a *API) RegisterRoutes(r *mux.Router) {
+
+	a.logger.Info("🚀🚀🚀 RegisterRoutes STARTING 🚀🚀🚀")
 	apiv2 := r.PathPrefix("/api/v2").Subrouter()
 	apiv2.Use(a.panicHandler)
 	apiv2.Use(a.requireCSRFToken)
@@ -94,6 +96,7 @@ func (a *API) RegisterRoutes(r *mux.Router) {
 	a.registerStatisticsRoutes(apiv2)
 	a.registerComplianceRoutes(apiv2)
 	a.registerNotificationsRoutes(apiv2)
+	a.registerGamificationRoutes(apiv2)
 
 	// V3 routes
 	a.registerCardsRoutes(apiv2)
@@ -103,12 +106,17 @@ func (a *API) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/v2/test", a.handleTest).Methods("GET")
 }
 
+
 func (a *API) RegisterAdminRoutes(r *mux.Router) {
 	r.HandleFunc("/api/v2/admin/users/{username}/password", a.adminRequired(a.handleAdminSetPassword)).Methods("POST")
 }
 
 func (a *API) registerNotificationsRoutes(r *mux.Router) {
 	r.HandleFunc("/notifications", a.sessionRequired(a.handleGetNotifications)).Methods("GET")
+}
+func (a *API) registerGamificationRoutes(r *mux.Router) {
+	a.logger.Info("🎮 Registering gamification route")
+	r.HandleFunc("/gamification", a.sessionRequired(a.handleGetGamification)).Methods("GET")
 }
 
 func getUserID(r *http.Request) string {

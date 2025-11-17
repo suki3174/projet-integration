@@ -14,6 +14,8 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { Utils } from '../../utils'
 import { IUser } from '../../user'
 
+import GamificationDashboard from './GamificationDashboard'
+
 import './sidebar.scss'
 
 import {
@@ -102,6 +104,8 @@ const Sidebar = (props: Props) => {
     const [notifData, setNotifData] = useState<NotificationResponse | null>(null)
     const [notifLoading, setNotifLoading] = useState(true)
     const [notifError, setNotifError] = useState<string | null>(null)
+
+    const [showGamification, setShowGamification] = useState(false)
 
     useEffect(() => {
         const categoryOnChangeHandler = (_: WSClient, categories: Category[]) => {
@@ -473,6 +477,15 @@ useEffect(() => {
                     defaultMessage='+ Add board'
                 />
             </div>
+
+            <div
+    className='add-board notification-button'
+    onClick={() => setShowGamification(true)}
+>
+    <span style={{ flex: 1 }}>
+        🏆 My Points
+    </span>
+</div>
 <div
     className='add-board notification-button'
     onClick={props.onNotificationSelectorOpen}
@@ -506,6 +519,53 @@ useEffect(() => {
 
 
             <SidebarSettingsMenu activeTheme={getActiveThemeName()} />
+
+            {showGamification && (
+    <div 
+        style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}
+        onClick={() => setShowGamification(false)}
+    >
+        <div 
+            style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                maxWidth: '90%',
+                maxHeight: '90%',
+                overflow: 'auto',
+                position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <button
+                onClick={() => setShowGamification(false)}
+                style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    zIndex: 1001
+                }}
+            >
+                ×
+            </button>
+            <GamificationDashboard />
+        </div>
+    </div>
+)}
         </div>
     )
 }

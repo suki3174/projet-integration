@@ -23,7 +23,7 @@ const GamificationDashboard = () => {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer kt4rxk86odig9tdgigi5sgaddmw',
+            'Authorization': `Bearer ${localStorage.getItem('focalboardSessionId')}`,
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'include'

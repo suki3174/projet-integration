@@ -10,6 +10,8 @@
 $z-index: (
     // key: value
     chatbot:                  1001,
+    priority-suggestion-button: 1000,
+    estimated-hours-button:   1000,
     modal-permissions-label: 1000,
     board-template-selector: 1000,
     notification-box:        1000,

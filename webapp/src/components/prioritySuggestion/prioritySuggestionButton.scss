@@ -1,0 +1,71 @@
+@import '../../styles/z-index.scss';
+
+.PrioritySuggestionButton {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    @include z-index(priority-suggestion-button);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: rgb(var(--sidebar-bg-rgb, 44, 47, 52));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    color: rgb(var(--center-channel-color-rgb, 221, 223, 228));
+    z-index: 1000;
+
+    &:hover:not(:disabled) {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        background-color: rgb(var(--sidebar-bg-rgb, 44, 47, 52));
+    }
+
+    &:active:not(:disabled) {
+        transform: scale(0.95);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .PrioritySuggestionIcon {
+        width: 24px;
+        height: 24px;
+        color: rgb(var(--center-channel-color-rgb, 221, 223, 228));
+    }
+
+    .loading-spinner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(var(--center-channel-color-rgb, 221, 223, 228), 0.3);
+            border-top-color: rgb(var(--center-channel-color-rgb, 221, 223, 228));
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media screen and (max-width: 430px) {
+        bottom: 100px;
+        right: 24px;
+    }
+}
+

@@ -36,6 +36,7 @@ import GuestNoBoards from './guestNoBoards'
 import Sidebar from './sidebar/sidebar'
 
 import './workspace.scss'
+import NotificationSelector from './NotificationSelector/notifSelect'
 
 type Props = {
     readonly: boolean
@@ -157,6 +158,19 @@ function CenterContent(props: Props) {
 }
 
 const Workspace = (props: Props) => {
+    // notification selector state
+     const [notificationSelectorOpen, setNotificationSelectorOpen] = useState(false)
+    
+
+    const closeNotificationSelector = useCallback(() => {
+        setNotificationSelectorOpen(false)
+    }, [])
+
+    const openNotificationSelector = useCallback(() => {
+        setNotificationSelectorOpen(true)
+    }, [])
+
+    // end notification selector state
     const board = useAppSelector(getCurrentBoard)
 
     const viewId = useAppSelector(getCurrentViewId)
@@ -172,6 +186,9 @@ const Workspace = (props: Props) => {
     }, [board])
     useEffect(() => {
         setBoardTemplateSelectorOpen(false)
+        if (!board) {
+            setNotificationSelectorOpen(false)
+        }
     }, [board, viewId])
 
     return (
@@ -180,12 +197,18 @@ const Workspace = (props: Props) => {
                 <Sidebar
                     onBoardTemplateSelectorOpen={openBoardTemplateSelector}
                     onBoardTemplateSelectorClose={closeBoardTemplateSelector}
+                    onNotificationSelectorOpen={openNotificationSelector}
                     activeBoardId={board?.id}
                 />
             }
             <div className='mainFrame'>
                 {boardTemplateSelectorOpen &&
                     <BoardTemplateSelector onClose={closeBoardTemplateSelector}/>}
+                {notificationSelectorOpen && (
+                <NotificationSelector
+                    onClose={closeNotificationSelector}
+                />
+            )}
                 {(board?.isTemplate) &&
                 <div className='banner'>
                     <FormattedMessage

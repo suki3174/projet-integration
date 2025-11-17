@@ -1,18 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React, {useCallback, useEffect, useState} from 'react'
-import {FormattedMessage} from 'react-intl'
-import {DragDropContext, Droppable, DropResult} from 'react-beautiful-dnd'
-
-import {getActiveThemeName, loadTheme} from '../../theme'
+import React, { useCallback, useEffect, useState } from 'react'
+import { FormattedMessage } from 'react-intl'
+import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd'
+import { FaBell } from 'react-icons/fa';
+import { getActiveThemeName, loadTheme } from '../../theme'
 import IconButton from '../../widgets/buttons/iconButton'
 import HamburgerIcon from '../../widgets/icons/hamburger'
 import HideSidebarIcon from '../../widgets/icons/hideSidebar'
 import ShowSidebarIcon from '../../widgets/icons/showSidebar'
-import {getCurrentBoard, getMySortedBoards} from '../../store/boards'
-import {useAppDispatch, useAppSelector} from '../../store/hooks'
-import {Utils} from '../../utils'
-import {IUser} from '../../user'
+import { getCurrentBoard, getMySortedBoards } from '../../store/boards'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { Utils } from '../../utils'
+import { IUser } from '../../user'
 
 import './sidebar.scss'
 
@@ -30,22 +30,22 @@ import {
 
 import BoardsSwitcher from '../boardsSwitcher/boardsSwitcher'
 
-import wsClient, {WSClient} from '../../wsclient'
+import wsClient, { WSClient } from '../../wsclient'
 
-import {getCurrentTeam, getCurrentTeamId} from '../../store/teams'
+import { getCurrentTeam, getCurrentTeamId } from '../../store/teams'
 
-import {Constants} from '../../constants'
+import { Constants } from '../../constants'
 
-import {getMe} from '../../store/users'
-import {getCurrentViewId} from '../../store/views'
+import { getMe } from '../../store/users'
+import { getCurrentViewId } from '../../store/views'
 
 import octoClient from '../../octoClient'
 
-import {useWebsockets} from '../../hooks/websockets'
+import { useWebsockets } from '../../hooks/websockets'
 
 import mutator from '../../mutator'
 
-import {Board} from '../../blocks/board'
+import { Board } from '../../blocks/board'
 
 import SidebarCategory from './sidebarCategory'
 import SidebarSettingsMenu from './sidebarSettingsMenu'
@@ -55,13 +55,36 @@ type Props = {
     activeBoardId?: string
     onBoardTemplateSelectorOpen: () => void
     onBoardTemplateSelectorClose?: () => void
+    onNotificationSelectorOpen?: () => void
 }
 
 function getWindowDimensions() {
-    const {innerWidth: width, innerHeight: height} = window
+    const { innerWidth: width, innerHeight: height } = window
     return {
         width,
         height,
+    }
+}
+type TaskNotification = {
+    id: string
+    title: string
+    boardId: string
+    boardTitle: string
+    dueDate: number
+    priority: string
+    status: string
+    timeToGo: string
+}
+
+type NotificationResponse = {
+    overdue: TaskNotification[]
+    dueUrgent: TaskNotification[]
+    dueSoon: TaskNotification[]
+    summary: {
+        totalPending: number
+        dueToday: number
+        dueThisWeek: number
+        overdueCount: number
     }
 }
 
@@ -72,9 +95,13 @@ const Sidebar = (props: Props) => {
     const boards = useAppSelector(getMySortedBoards)
     const dispatch = useAppDispatch()
     const sidebarCategories = useAppSelector<CategoryBoards[]>(getSidebarCategories)
-    const me = useAppSelector<IUser|null>(getMe)
+    const me = useAppSelector<IUser | null>(getMe)
     const activeViewID = useAppSelector(getCurrentViewId)
     const currentBoard = useAppSelector(getCurrentBoard)
+    // i added this for notif badge 
+    const [notifData, setNotifData] = useState<NotificationResponse | null>(null)
+    const [notifLoading, setNotifLoading] = useState(true)
+    const [notifError, setNotifError] = useState<string | null>(null)
 
     useEffect(() => {
         const categoryOnChangeHandler = (_: WSClient, categories: Category[]) => {
@@ -93,6 +120,37 @@ const Sidebar = (props: Props) => {
             wsClient.removeOnChange(blockCategoryOnChangeHandler, 'blockCategories')
         }
     }, [])
+// i added this for notif response on loading page
+useEffect(() => {
+    const fetchNotifications = async () => {
+        try {
+            setNotifLoading(true)
+            const res = await fetch('/api/v2/notifications', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer kxy41mccbijgfbx8qxsagsakahc',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'include',
+            })
+
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`)
+
+            const data: NotificationResponse = await res.json()
+            setNotifData(data)
+        } catch (err) {
+            setNotifError(err instanceof Error ? err.message : 'Unknown error')
+            console.error('Notification fetch error:', err)
+        } finally {
+            setNotifLoading(false)
+        }
+    }
+
+    fetchNotifications()
+}, []) 
+
+
 
     const teamId = useAppSelector(getCurrentTeamId)
     const team = useAppSelector(getCurrentTeam)
@@ -164,7 +222,7 @@ const Sidebar = (props: Props) => {
     }, [teamId])
 
     if (!boards) {
-        return <div/>
+        return <div />
     }
 
     const hideSidebar = () => {
@@ -178,7 +236,7 @@ const Sidebar = (props: Props) => {
     }
 
     const handleCategoryDND = useCallback(async (result: DropResult) => {
-        const {destination, source} = result
+        const { destination, source } = result
         if (!team || !destination) {
             return
         }
@@ -202,7 +260,7 @@ const Sidebar = (props: Props) => {
     }, [team, sidebarCategories])
 
     const handleCategoryBoardDND = useCallback(async (result: DropResult) => {
-        const {source, destination, draggableId} = result
+        const { source, destination, draggableId } = result
 
         if (!team || !destination) {
             return
@@ -224,7 +282,7 @@ const Sidebar = (props: Props) => {
             categoryBoardMetadata.splice(source.index, 1)
             categoryBoardMetadata.splice(destination.index, 0, toSidebarCategory.boardMetadata[source.index])
 
-            dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata}))
+            dispatch(updateCategoryBoardsOrder({ categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata }))
 
             const reorderedBoardIDs = categoryBoardMetadata.map((m) => m.boardID)
             await octoClient.reorderSidebarCategoryBoards(team.id, toCategoryID, reorderedBoardIDs)
@@ -248,8 +306,8 @@ const Sidebar = (props: Props) => {
             categoryBoardMetadata.splice(destination.index, 0, fromCategoryBoardMetadata)
 
             // optimistically updating the store to create a lag-free UI.
-            await dispatch(updateCategoryBoardsOrder({categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata}))
-            dispatch(updateBoardCategories([{...fromCategoryBoardMetadata, categoryID: toCategoryID}]))
+            await dispatch(updateCategoryBoardsOrder({ categoryID: toCategoryID, boardsMetadata: categoryBoardMetadata }))
+            dispatch(updateBoardCategories([{ ...fromCategoryBoardMetadata, categoryID: toCategoryID }]))
 
             await mutator.moveBoardToCategory(team.id, boardID, toCategoryID, fromCategoryID)
 
@@ -259,7 +317,7 @@ const Sidebar = (props: Props) => {
     }, [team, sidebarCategories])
 
     const onDragEnd = useCallback(async (result: DropResult) => {
-        const {destination, source, type} = result
+        const { destination, source, type } = result
 
         if (!team || !destination) {
             setDraggedItemID('')
@@ -289,11 +347,11 @@ const Sidebar = (props: Props) => {
     const [isCategoryBeingDragged, setIsCategoryBeingDragged] = useState<boolean>(false)
 
     if (!boards) {
-        return <div/>
+        return <div />
     }
 
     if (!me) {
-        return <div/>
+        return <div />
     }
 
     if (isHidden) {
@@ -302,7 +360,7 @@ const Sidebar = (props: Props) => {
                 <div className='octo-sidebar-header show-button'>
                     <div className='hamburger-icon'>
                         <IconButton
-                            icon={<HamburgerIcon/>}
+                            icon={<HamburgerIcon />}
                             onClick={() => {
                                 setUserHidden(false)
                                 setHidden(false)
@@ -311,7 +369,7 @@ const Sidebar = (props: Props) => {
                     </div>
                     <div className='show-icon'>
                         <IconButton
-                            icon={<ShowSidebarIcon/>}
+                            icon={<ShowSidebarIcon />}
                             onClick={() => {
                                 setUserHidden(false)
                                 setHidden(false)
@@ -347,26 +405,26 @@ const Sidebar = (props: Props) => {
         <div className='Sidebar octo-sidebar'>
             <div className='octo-sidebar-header'>
                 <div className='heading'>
-                    <SidebarUserMenu/>
+                    <SidebarUserMenu />
                 </div>
 
-                <div className='octo-spacer'/>
+                <div className='octo-spacer' />
                 <div className='sidebarSwitcher'>
                     <IconButton
                         onClick={() => {
                             setUserHidden(true)
                             setHidden(true)
                         }}
-                        icon={<HideSidebarIcon/>}
+                        icon={<HideSidebarIcon />}
                     />
                 </div>
             </div>
 
             {team && team.id !== Constants.globalTeamId &&
-                <div className='WorkspaceTitle'/>
+                <div className='WorkspaceTitle' />
             }
 
-            <BoardsSwitcher/>
+            <BoardsSwitcher />
 
             <DragDropContext
                 onDragEnd={onDragEnd}
@@ -405,9 +463,8 @@ const Sidebar = (props: Props) => {
                 </Droppable>
             </DragDropContext>
 
-            <div className='octo-spacer'/>
-
-            <div
+            <div className='octo-spacer' />
+           <div
                 className='add-board'
                 onClick={props.onBoardTemplateSelectorOpen}
             >
@@ -416,8 +473,39 @@ const Sidebar = (props: Props) => {
                     defaultMessage='+ Add board'
                 />
             </div>
+<div
+    className='add-board notification-button'
+    onClick={props.onNotificationSelectorOpen}
+>
+    <span style={{ flex: 1 }}>
+        <FormattedMessage
+            id='Sidebar.notif'
+            defaultMessage='Notifications'
+        />
+    </span>
+    {notifData && notifData.summary.totalPending > 0 && (
+        <span
+            style={{
+                backgroundColor: 'red',
+                color: 'white',
+                borderRadius: '12px',
+                padding: '2px 6px',
+                fontSize: '12px',
+                lineHeight: 1,
+                minWidth: '20px',
+                textAlign: 'center'
+            }}
+        >
+            {notifData.summary.totalPending}
+        </span>
+    )}
+</div>
 
-            <SidebarSettingsMenu activeTheme={getActiveThemeName()}/>
+
+
+
+
+            <SidebarSettingsMenu activeTheme={getActiveThemeName()} />
         </div>
     )
 }

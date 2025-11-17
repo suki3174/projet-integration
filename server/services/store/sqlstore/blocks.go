@@ -88,6 +88,11 @@ func (s *SQLStore) getBlocks(db sq.BaseRunner, opts model.QueryBlocksOptions) ([
 
 	return s.blocksFromRows(rows)
 }
+// // i added this function to get the blocks with due date
+// func (s *SQLStore) getBlocksWithDueDate(db sq.BaseRunner, boardID string) ([]*model.Block, error) {
+
+// 	// to doo: implement filtering by due date
+// }
 
 func (s *SQLStore) getBlocksWithParentAndType(db sq.BaseRunner, boardID, parentID string, blockType string) ([]*model.Block, error) {
 	opts := model.QueryBlocksOptions{

@@ -93,16 +93,22 @@ func (a *API) RegisterRoutes(r *mux.Router) {
 	a.registerContentBlocksRoutes(apiv2)
 	a.registerStatisticsRoutes(apiv2)
 	a.registerComplianceRoutes(apiv2)
+	a.registerNotificationsRoutes(apiv2)
 
 	// V3 routes
 	a.registerCardsRoutes(apiv2)
 
 	// System routes are outside the /api/v2 path
 	a.registerSystemRoutes(r)
+	r.HandleFunc("/api/v2/test", a.handleTest).Methods("GET")
 }
 
 func (a *API) RegisterAdminRoutes(r *mux.Router) {
 	r.HandleFunc("/api/v2/admin/users/{username}/password", a.adminRequired(a.handleAdminSetPassword)).Methods("POST")
+}
+
+func (a *API) registerNotificationsRoutes(r *mux.Router) {
+	r.HandleFunc("/notifications", a.sessionRequired(a.handleGetNotifications)).Methods("GET")
 }
 
 func getUserID(r *http.Request) string {
@@ -234,4 +240,23 @@ func setResponseHeader(w http.ResponseWriter, key string, value string) { //noli
 		return
 	}
 	header.Set(key, value)
+}
+
+func (a *API) handleTest(w http.ResponseWriter, r *http.Request) {
+	a.logger.Info("🎉 Test endpoint called!")
+	
+	response := map[string]interface{}{
+		"message": "Backend is working perfectly!",
+		"status":  "success",
+		"custom":  "This is from your modified Focalboard backend",
+		"emoji":   "🚀",
+	}
+	
+	data, err := json.Marshal(response)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+	
+	jsonBytesResponse(w, http.StatusOK, data)
 }

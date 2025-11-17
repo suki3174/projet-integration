@@ -1,3 +1,4 @@
+
 {
     "serverRoot": "http://localhost:8000",
     "port": 8000,
@@ -17,6 +18,11 @@
     "enableSignUp": true,
     "enableChat": true,
     "chatWebsocketPath": "/ws/chat",
+    
+"enablePublicSharedBoards": true,
+ 
+
+   
     
     "localModeSocketLocation": "/var/tmp/focalboard_local.socket"
 }

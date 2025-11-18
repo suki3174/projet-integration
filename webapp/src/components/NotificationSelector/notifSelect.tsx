@@ -46,7 +46,7 @@ const NotificationSelector = (props: Props) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer kxy41mccbijgfbx8qxsagsakahc',
+      'Authorization': `Bearer ${localStorage.getItem('focalboardSessionId')}`,
       'X-Requested-With': 'XMLHttpRequest' 
     },
     credentials: 'include'  

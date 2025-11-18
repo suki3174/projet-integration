@@ -13,6 +13,8 @@ import {getMessages} from './i18n'
 import {FlashMessages} from './components/flashMessages'
 import NewVersionBanner from './components/newVersionBanner'
 import Chatbot from './components/chatbot/chatbot'
+import PrioritySuggestionButton from './components/prioritySuggestion/prioritySuggestionButton'
+import EstimatedHoursSuggestionButton from './components/estimatedHoursSuggestion/estimatedHoursSuggestionButton'
 import {Utils} from './utils'
 import {fetchMe, getMe} from './store/users'
 import {getLanguage, fetchLanguage} from './store/language'
@@ -51,6 +53,8 @@ const App = (props: Props): JSX.Element => {
             <DndProvider backend={Utils.isMobile() ? TouchBackend : HTML5Backend}>
                 <FlashMessages milliseconds={2000}/>
                 <Chatbot/>
+                <PrioritySuggestionButton/>
+                <EstimatedHoursSuggestionButton/>
                 <div id='frame'>
                     <div id='main'>
                         <NewVersionBanner/>

@@ -15,6 +15,7 @@ import { Utils } from '../../utils'
 import { IUser } from '../../user'
 
 import GamificationDashboard from './GamificationDashboard'
+import Dashboard from './dashboard'
 
 import './sidebar.scss'
 
@@ -52,6 +53,7 @@ import { Board } from '../../blocks/board'
 import SidebarCategory from './sidebarCategory'
 import SidebarSettingsMenu from './sidebarSettingsMenu'
 import SidebarUserMenu from './sidebarUserMenu'
+
 
 type Props = {
     activeBoardId?: string
@@ -106,6 +108,7 @@ const Sidebar = (props: Props) => {
     const [notifError, setNotifError] = useState<string | null>(null)
 
     const [showGamification, setShowGamification] = useState(false)
+    const [showDashboard, setShowDashboard] = useState(false)
 
     useEffect(() => {
         const categoryOnChangeHandler = (_: WSClient, categories: Category[]) => {
@@ -124,35 +127,35 @@ const Sidebar = (props: Props) => {
             wsClient.removeOnChange(blockCategoryOnChangeHandler, 'blockCategories')
         }
     }, [])
-// i added this for notif response on loading page
-useEffect(() => {
-    const fetchNotifications = async () => {
-        try {
-            setNotifLoading(true)
-            const res = await fetch('/api/v2/notifications', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('focalboardSessionId')}`,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'include',
-            })
+    // i added this for notif response on loading page
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                setNotifLoading(true)
+                const res = await fetch('/api/v2/notifications', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('focalboardSessionId')}`,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'include',
+                })
 
-            if (!res.ok) throw new Error(`HTTP error ${res.status}`)
+                if (!res.ok) throw new Error(`HTTP error ${res.status}`)
 
-            const data: NotificationResponse = await res.json()
-            setNotifData(data)
-        } catch (err) {
-            setNotifError(err instanceof Error ? err.message : 'Unknown error')
-            console.error('Notification fetch error:', err)
-        } finally {
-            setNotifLoading(false)
+                const data: NotificationResponse = await res.json()
+                setNotifData(data)
+            } catch (err) {
+                setNotifError(err instanceof Error ? err.message : 'Unknown error')
+                console.error('Notification fetch error:', err)
+            } finally {
+                setNotifLoading(false)
+            }
         }
-    }
 
-    fetchNotifications()
-}, []) 
+        fetchNotifications()
+    }, [])
 
 
 
@@ -407,6 +410,7 @@ useEffect(() => {
 
     return (
         <div className='Sidebar octo-sidebar'>
+            {/*SidebarUserMenu */}
             <div className='octo-sidebar-header'>
                 <div className='heading'>
                     <SidebarUserMenu />
@@ -468,7 +472,7 @@ useEffect(() => {
             </DragDropContext>
 
             <div className='octo-spacer' />
-           <div
+            <div
                 className='add-board'
                 onClick={props.onBoardTemplateSelectorOpen}
             >
@@ -478,94 +482,185 @@ useEffect(() => {
                 />
             </div>
 
+            {/*DASHBOARD*/}
             <div
-    className='add-board notification-button'
-    onClick={() => setShowGamification(true)}
->
-    <span style={{ flex: 1 }}>
-        🏆 My Points
-    </span>
-</div>
-<div
-    className='add-board notification-button'
-    onClick={props.onNotificationSelectorOpen}
->
-    <span style={{ flex: 1 }}>
-        <FormattedMessage
-            id='Sidebar.notif'
-            defaultMessage='Notifications'
-        />
-    </span>
-    {notifData && notifData.summary.totalPending > 0 && (
-        <span
-            style={{
-                backgroundColor: 'red',
-                color: 'white',
-                borderRadius: '12px',
-                padding: '2px 6px',
-                fontSize: '12px',
-                lineHeight: 1,
-                minWidth: '20px',
-                textAlign: 'center'
-            }}
-        >
-            {notifData.summary.totalPending}
-        </span>
-    )}
-</div>
+                className='add-board notification-button'
+                onClick={() => setShowDashboard(true)}
+            >
+                <span style={{ flex: 1 }}>
+                    📑 My Dashboard
+                </span>
+            </div>
 
+            {/*GAMIFIACTION*/}
+            <div
+                className='add-board notification-button'
+                onClick={() => setShowGamification(true)}
+            >
+                <span style={{ flex: 1 }}>
+                    🏆 My Points
+                </span>
+            </div>
 
-
+            {/* NOTIFICATIONS */}
+            <div
+                className='add-board notification-button'
+                onClick={props.onNotificationSelectorOpen}
+            >
+                <span style={{ flex: 1 }}>
+                    <FormattedMessage
+                        id='Sidebar.notif'
+                        defaultMessage='Notifications'
+                    />
+                </span>
+                {notifData && notifData.summary.totalPending > 0 && (
+                    <span
+                        style={{
+                            backgroundColor: 'red',
+                            color: 'white',
+                            borderRadius: '12px',
+                            padding: '2px 6px',
+                            fontSize: '12px',
+                            lineHeight: 1,
+                            minWidth: '20px',
+                            textAlign: 'center'
+                        }}
+                    >
+                        {notifData.summary.totalPending}
+                    </span>
+                )}
+            </div>
 
 
             <SidebarSettingsMenu activeTheme={getActiveThemeName()} />
 
             {showGamification && (
-    <div 
-        style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        }}
-        onClick={() => setShowGamification(false)}
-    >
-        <div 
-            style={{
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                maxWidth: '90%',
-                maxHeight: '90%',
-                overflow: 'auto',
-                position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
-        >
-            <button
-                onClick={() => setShowGamification(false)}
-                style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    zIndex: 1001
-                }}
-            >
-                ×
-            </button>
-            <GamificationDashboard />
-        </div>
-    </div>
-)}
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                    onClick={() => setShowGamification(false)}
+                >
+                    <div
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            maxWidth: '90%',
+                            maxHeight: '90%',
+                            overflow: 'auto',
+                            position: 'relative'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowGamification(false)}
+                            style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                zIndex: 1001
+                            }}
+                        >
+                            ×
+                        </button>
+                        <GamificationDashboard />
+                    </div>
+                </div>
+            )}
+
+            {showDashboard && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 2000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}
+                    onClick={() => setShowDashboard(false)}
+                >
+                    <div
+                        style={{
+                            backgroundColor: '#6d6c60',
+                            borderRadius: '16px',
+                            width: '95%',
+                            maxWidth: '1500px',
+                            maxHeight: '85vh',
+                            overflow: 'hidden',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+                            position: 'relative',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            animation: 'scaleIn 0.2s ease'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header du modal */}
+                        <div
+                            style={{
+                                padding: '16px 24px',
+                                borderBottom: '1px solid #302a36',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: '#4b4a43'
+                            }}
+                        >
+                            <h2 style={{ margin: 0, color:'white', fontSize: '20px', fontWeight: '600' }}>
+                                📉 My Dashboard
+                            </h2>
+                            <button
+                                onClick={() => setShowDashboard(false)}
+                                style={{
+                                    background: '#f0f0f0',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '6px 12px',
+                                    fontSize: '18px',
+                                    cursor: 'pointer',
+                                    transition: '0.2s'
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Contenu */}
+                        <div
+                            style={{
+                                padding: '24px',
+                                overflowY: 'auto'
+                            }}
+                        >
+                            <Dashboard />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+
+
         </div>
     )
 }

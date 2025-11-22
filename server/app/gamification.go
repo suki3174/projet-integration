@@ -1,8 +1,12 @@
 package app
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
-	
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
@@ -49,6 +53,9 @@ func (a *App) GetGamification(userID string) (*model.GamificationResponse, error
 		},
 	}
 
+	// Get current time for comparison
+	now := time.Now().UnixMilli()
+
 	// Get boards for user
 	userBoards, err := a.GetBoardsForUserAndTeam(userID, "0", false)
 	if err != nil {
@@ -84,6 +91,13 @@ func (a *App) GetGamification(userID string) (*model.GamificationResponse, error
 				continue
 			}
 
+			// DEBUG: Log the raw due date value
+			a.logger.Debug("Raw due date value",
+				mlog.String("taskID", block.ID),
+				mlog.String("title", block.Title),
+				mlog.Any("dueDateRaw", dueDateRaw),
+				mlog.String("dueDateType", fmt.Sprintf("%T", dueDateRaw)))
+
 			// Get priority name from board properties
 			priorityName := getPriorityNameFromBoard(board.CardProperties, "d3d682bf-e074-49d9-8df5-7320921c2d23", priorityID)
 			
@@ -93,21 +107,54 @@ func (a *App) GetGamification(userID string) (*model.GamificationResponse, error
 				points = p
 			}
 
-			// Parse due date if exists
+			// Parse due date
 			dueDate := parseDueDate(dueDateRaw)
-			completedAt := block.UpdateAt // Assuming UpdateAt is completion time
+			completedAt := block.UpdateAt
 			earlyCompletion := false
 			onTime := false
 
-			if dueDate > 0 && completedAt > 0 {
-				// Check if completed before deadline
-				if completedAt < dueDate {
+			// SIMPLE LOGIC: If task is completed and NOW < due date, it was completed early!
+			if dueDate > 0 {
+				// Convert milliseconds to readable format for debugging
+				nowSec := now / 1000
+				dueDateSec := dueDate / 1000
+				diffHours := (now - dueDate) / (1000 * 60 * 60)
+				
+				a.logger.Info("⏰ Checking completion timing",
+					mlog.String("taskID", block.ID),
+					mlog.String("title", block.Title),
+					mlog.Int("nowUnix", int(nowSec)),
+					mlog.Int("dueDateUnix", int(dueDateSec)),
+					mlog.Int("diffHours", int(diffHours)),
+					mlog.Bool("isEarly", now < dueDate))
+
+				// Check if NOW is before the deadline (task still has time)
+				if now < dueDate {
 					points += EarlyCompletionBonus
 					earlyCompletion = true
-				} else if completedAt-dueDate < 86400000 { // Within 24 hours
+					a.logger.Info("🎉 Early completion detected!",
+						mlog.String("taskID", block.ID),
+						mlog.String("title", block.Title),
+						mlog.Int("bonusPoints", EarlyCompletionBonus),
+						mlog.Int("hoursBeforeDeadline", int(-diffHours)))
+				} else if now-dueDate < 86400000 { // Within 24 hours after deadline
 					points += OnTimeBonus
 					onTime = true
+					a.logger.Info("✅ On-time completion (within 24h)!",
+						mlog.String("taskID", block.ID),
+						mlog.String("title", block.Title),
+						mlog.Int("bonusPoints", OnTimeBonus),
+						mlog.Int("hoursAfterDeadline", int(diffHours)))
+				} else {
+					a.logger.Info("❌ Late completion (no bonus)",
+						mlog.String("taskID", block.ID),
+						mlog.String("title", block.Title),
+						mlog.Int("hoursLate", int(diffHours)))
 				}
+			} else {
+				a.logger.Debug("No due date set for completed task",
+					mlog.String("taskID", block.ID),
+					mlog.String("title", block.Title))
 			}
 
 			task := model.TaskGamification{
@@ -168,15 +215,44 @@ func calculateBadge(points int) model.Badge {
 }
 
 func parseDueDate(raw interface{}) int64 {
-	// Similar to your notifications parsing logic
-	if num, ok := raw.(float64); ok {
-		return int64(num)
+	if raw == nil {
+		return 0
 	}
-	if num, ok := raw.(int64); ok {
-		return num
+	
+	var dueDate int64
+	
+	switch v := raw.(type) {
+	case float64:
+		dueDate = int64(v)
+	case int64:
+		dueDate = v
+	case int:
+		dueDate = int64(v)
+	case string:
+		// Handle {"from": timestamp} format - same as notifications
+		if strings.HasPrefix(v, "{") {
+			var dateObj struct {
+				From interface{} `json:"from"`
+			}
+			if err := json.Unmarshal([]byte(v), &dateObj); err == nil {
+				// Handle both string and numeric timestamps
+				switch fromVal := dateObj.From.(type) {
+				case float64:
+					dueDate = int64(fromVal)
+				case int64:
+					dueDate = fromVal
+				case string:
+					if parsed, err := strconv.ParseInt(fromVal, 10, 64); err == nil {
+						dueDate = parsed
+					}
+				}
+			}
+		} else if parsed, err := strconv.ParseInt(v, 10, 64); err == nil {
+			dueDate = parsed
+		}
 	}
-	// Add JSON parsing if needed
-	return 0
+	
+	return dueDate
 }
 
 func getPriorityNameFromBoard(cardProperties []map[string]interface{}, propertyID, optionID string) string {

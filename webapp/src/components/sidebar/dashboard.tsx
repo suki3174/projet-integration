@@ -7,6 +7,19 @@ import { getCurrentBoard } from '../../store/boards'
 import { getCurrentBoardCards } from '../../store/cards'
 
 
+type CompletedTask = {
+  id: string;
+  title: string;
+  board_id: string;
+  board_title: string;
+  priority: string;
+  points: number;
+  completed_at: number;
+  due_date: number;
+  early_completion: boolean;
+  on_time: boolean;
+};
+
 type Badge = {
   name: string;
   icon: string;
@@ -22,7 +35,7 @@ type Summary = {
 };
 
 const Dashboard = () => {
-  const [data, setData] = useState<{ summary: Summary } | null>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const board = useAppSelector(getCurrentBoard);
@@ -166,6 +179,43 @@ const Dashboard = () => {
 
 
 
+  // =============================
+  //       burn Down chart early and notEarly
+  // =============================
+  const burnDownData: { date: string; early: number; notEarly: number }[] = [];
+
+  if (data?.completed) {
+    const tasksByDate: Record<string, { early: number; notEarly: number }> = {};
+
+    data.completed.forEach((task: CompletedTask) => {
+      const d = new Date(task.completed_at);
+      const day = d.getDate();
+      const month = d.toLocaleString('fr-FR', { month: 'short' });
+      const key = `${day} ${month}`;
+
+      if (!tasksByDate[key]) tasksByDate[key] = { early: 0, notEarly: 0 };
+
+      if (task.early_completion) tasksByDate[key].early += 1;
+      else tasksByDate[key].notEarly += 1;
+    });
+
+
+    burnDownData.push(
+      ...Object.entries(tasksByDate)
+        .sort(([a], [b]) => {
+          const [dayA, monthA] = a.split(' ');
+          const [dayB, monthB] = b.split(' ');
+          const months: Record<string, number> = {
+            "jan": 0, "fév": 1, "mar": 2, "avr": 3, "mai": 4, "jun": 5, "jul": 6, "aoû": 7, "sep": 8, "oct": 9, "nov": 10, "déc": 11
+          };
+          return new Date(2025, months[monthA], parseInt(dayA)).getTime() - new Date(2025, months[monthB], parseInt(dayB)).getTime();
+        })
+        .map(([date, value]) => ({ date, early: value.early, notEarly: value.notEarly }))
+    );
+  }
+
+
+
 
 
 
@@ -187,6 +237,7 @@ const Dashboard = () => {
 
       const result = await res.json();
       setData(result);
+      console.log("result : ", result);
     } catch (err) {
       console.error("Error:", err);
     } finally {
@@ -204,6 +255,7 @@ const Dashboard = () => {
     { name: 'Total Points', value: data.summary.total_points },
     { name: 'Tasks Completed', value: data.summary.total_completed },
   ];
+
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', minHeight: '100%' }}>
@@ -234,6 +286,21 @@ const Dashboard = () => {
         }}>
           <h3 style={{ margin: 0, fontSize: '12px', color: '#e7e4e4ff' }}>Tasks Completed</h3>
           <p style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>{data.summary.total_completed}</p>
+        </div>
+
+        {/*tasks Completed early */}
+        <div style={{
+          flex: 1,
+          backgroundColor: '#4b4a43',
+          padding: '16px',
+          borderRadius: '8px',
+          border: '1px solid #302a36',
+          textAlign: 'center'
+        }}>
+          <h3 style={{ margin: 0, fontSize: '12px', color: '#e7e4e4ff' }}>Tasks Completed Early</h3>
+          <p style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>
+            {data.completed?.filter((t: any) => t.early_completion).length || 0}
+          </p>
         </div>
 
         {/*nbre total des tasks dans la board */}
@@ -388,6 +455,37 @@ const Dashboard = () => {
         </div>
 
       </div>
+
+      {/*    CHART  3  */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+
+        {/* Burn Down Chart early */}
+        <div style={{
+          flex: 1,
+          backgroundColor: '#4b4a43',
+          padding: '20px',
+          borderRadius: '12px'
+        }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '12px' }}>📉 Burn Down Chart – Early vs Not Early Tasks</h2>
+          <div style={{ width: '100%', height: 300 }}> {/* un peu plus grand */}
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={burnDownData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#888888" />
+                <XAxis dataKey="date" tick={{ fill: 'white' }} />
+                <YAxis tick={{ fill: 'white' }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="early" stroke="#82ca9d" name="Early Completion" />
+                <Line type="monotone" dataKey="notEarly" stroke="#ff6b6b" name="Not Early" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+
+
+
+      </div>
+
 
 
       {/* Earned Badges */}

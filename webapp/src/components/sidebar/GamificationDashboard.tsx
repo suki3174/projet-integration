@@ -30,6 +30,7 @@ const GamificationDashboard = () => {
       });
       const result = await response.json();
       setData(result);
+      console.log("res : ", result)
       setLoading(false);
     } catch (error) {
       console.error('Error:', error);
